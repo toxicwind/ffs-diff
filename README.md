@@ -1,61 +1,76 @@
 # ffs-diff
 
-Multi-file **structural diff** and **three-way merge** helper for the estate,
-aware of `ffs` tree-sitter outlines. A small, dependency-light Node CLI.
+**Structural diff + three-way merge for the estate, ffs/tree-sitter aware.**
 
-## What it does
+Diff two files by their *shape* (functions, classes, imports) first, or merge
+two diverged revisions against a common base in one command — without dropping
+either side's edit.
 
-**Diff mode** — compare two (or more) files by structure first, then body:
+```bash
+# Diff two files by structure, then body
+ffs-diff src/a.ts src/b.ts --full
 
-```
-ffs-diff <file1> <file2> [file3 ...] [--format json|text] [--outline] [--full]
-```
-
-- Lists **added / removed / changed** symbols (from `ffs outline`)
-- Shows per-file outline counts
-- `--full` adds a unified line-diff preview
-- Markdown files are outlined by their heading tree
-
-**Merge mode** — proper three-way merge against a common base:
-
-```
-ffs-diff <base> <ours> <theirs> --merge [--output <file>] [--json]
+# Merge two diverged checkouts (base ours theirs), clean or conflict-marked
+ffs-diff f38e1329.ts ours.ts theirs.ts --merge --output merged.ts
 ```
 
-- Backed by git's battle-tested `merge-file` (diff3 with base anchoring)
-- Regions changed on only one side are applied automatically
-- Regions changed differently on both sides become conflict markers
-  (`<<<<<<< ours / ======= / >>>>>>> theirs`)
-- Never silently drops either side's edit
-- Exit `0` clean, `1` conflicts; `--json` prints the conflict-region index
+A clean merge exits `0`; any conflict exits `1` and writes
+`<<<<<<< ours / ======= / >>>>>>> theirs` markers.
 
-## Modules
-
-```
-bin/ffs-diff.js    CLI entry (arg parsing + dispatch only)
-src/diff.js        line primitives: splitLines, lcsOps, simpleDiff
-src/outline.js     ffs tree-sitter outlines, markdown headings, signature diff
-src/merge.js       three-way merge (git merge-file) + fast-forward detection
-src/cli.js         argument parsing, help, diff/merge printing
-src/index.js       programmatic API for embedding
-```
-
-Consumers `require("ffs-diff")` for `mergeThree`, `getOutline`, `diffSignatures`,
-`lcsOps`, etc. — no need to shell to the CLI.
+---
 
 ## Install
 
-`ffs-diff` runs on node. Link it onto PATH:
+Runs on node ≥ 20 / bun ≥ 1.4.4, zero runtime deps. It shells to git's
+`merge-file` (merge mode) and the estate's `ffs` binary (structural diff).
 
+```bash
+ln -sf "$(pwd)/bin/ffs-diff.js" ~/.local/bin/ffs-diff   # link onto PATH
+# or: npm link  /  bun install + bun run --bin ffs-diff
 ```
-ln -sf "$(pwd)/bin/ffs-diff.js" ~/.local/bin/ffs-diff
+
+## Modules & API
+
+Every capability is a composable, `require`-able module — no need to shell to
+the CLI:
+
+| Module | Exports | Package entry |
+| ------ | ------- | ------------- |
+| [`src/diff.js`](src/diff.js) | `splitLines` · `lcsOps` · `simpleDiff` | line primitives |
+| [`src/outline.js`](src/outline.js) | `getOutline` · `getMarkdownOutline` · `buildSignatureMap` · `diffSignatures` | structure |
+| [`src/merge.js`](src/merge.js) | `mergeThree` · `fastForward` | diff3 via git |
+| [`src/index.js`](src/index.js) | the full public API | `require("ffs-diff")` |
+
+```js
+const { mergeThree, getOutline, diffSignatures } = require("ffs-diff");
+const { merged, conflicts } = mergeThree(basePath, oursPath, theirsPath);
 ```
 
-or `npm link`. It shells to `git merge-file` for merge mode and to the estate's
-`ffs` binary for structural outlines (both expected on the estate host).
+See [docs/DESIGN.md](docs/DESIGN.md) for the diff3 rationale and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for layout; [AGENTS.md](AGENTS.md)
+is the component contract.
 
-## Why
+## Why it exists
 
-`ffs-diff` exists so dual-worktree reconciliation (e.g. two checkouts of the
-same repo diverged) can be done with a single, outline-aware command instead of
-hand-porting files. See `docs/DESIGN.md` for the rationale.
+Reconciling two diverged checkouts of the same repo (a stray duplicate and the
+canonical copy) by hand-porting files drops content or clobbers an edit. `diff`
+shows *what* differs, not *where it matters structurally*. `ffs-diff` ranks the
+changed surfaces via tree-sitter outlines, then merges with git's proven diff3
+engine.
+
+## Tests & status
+
+```bash
+bun test tests/   # diff, outline, merge suites — all green
+```
+
+Registered as a first-class ranch project in both pipelines:
+
+| Tool | Role | Status |
+| ---- | ---- | ------ |
+| [meta](https://github.com/toxicwind/meta) | repo-graph sync (`ranch/.meta.yaml`) | `ffs-diff | main | clean` |
+| [moon](https://github.com/toxicwind/moon) | build/task graph (`ranch/.moon`) | project `id: ffs-diff` |
+
+## License
+
+[MIT](LICENSE)
