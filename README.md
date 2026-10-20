@@ -29,6 +29,20 @@ ffs-diff <base> <ours> <theirs> --merge [--output <file>] [--json]
 - Never silently drops either side's edit
 - Exit `0` clean, `1` conflicts; `--json` prints the conflict-region index
 
+## Modules
+
+```
+bin/ffs-diff.js    CLI entry (arg parsing + dispatch only)
+src/diff.js        line primitives: splitLines, lcsOps, simpleDiff
+src/outline.js     ffs tree-sitter outlines, markdown headings, signature diff
+src/merge.js       three-way merge (git merge-file) + fast-forward detection
+src/cli.js         argument parsing, help, diff/merge printing
+src/index.js       programmatic API for embedding
+```
+
+Consumers `require("ffs-diff")` for `mergeThree`, `getOutline`, `diffSignatures`,
+`lcsOps`, etc. — no need to shell to the CLI.
+
 ## Install
 
 `ffs-diff` runs on node. Link it onto PATH:
