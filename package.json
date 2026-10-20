@@ -1,0 +1,27 @@
+{
+  "name": "@estate/ffs-diff",
+  "version": "1.0.0",
+  "description": "ffs-diff: multi-file structural diff and three-way merge, ffs/tree-sitter aware.",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "bin/ffs-diff.js",
+  "bin": {
+    "ffs-diff": "./bin/ffs-diff.js"
+  },
+  "files": [
+    "bin/",
+    "README.md",
+    "AGENTS.md"
+  ],
+  "scripts": {
+    "test": "bun test tests/"
+  },
+  "keywords": [
+    "ffs",
+    "diff",
+    "merge",
+    "diff3",
+    "tree-sitter",
+    "estate"
+  ]
+}
