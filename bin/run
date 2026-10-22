@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# ffs-diff — primary operation: the ffs-diff CLI (structural diff across FFS
+# indexes / repo states).
+#
+# Usage:
+#   bin/run check          # fast gate: bun test + CLI help
+#   bin/run [args...]      # run the ffs-diff CLI
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export RUN_FAST_ACTIVE=0
+BUN="${BUN:-/home/toxic/.bun/bin/bun}"; [ -x "$BUN" ] || BUN=bun
+
+if [ "${1:-}" = "check" ]; then exec ./bin/check; fi
+[ -f bin/ffs-diff.js ] || { echo "FAIL: bin/ffs-diff.js missing"; exit 1; }
+exec "$BUN" run bin/ffs-diff.js "$@"

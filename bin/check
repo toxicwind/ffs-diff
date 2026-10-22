@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# ffs-diff — self-test gate (PASS/FAIL).
+# Clean repo. Gate = `bun test tests/` (real suite) + CLI file present.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export RUN_FAST_ACTIVE=0
+BUN="${BUN:-/home/toxic/.bun/bin/bun}"; [ -x "$BUN" ] || BUN=bun
+
+echo "== ffs-diff check: start =="
+[ -f bin/ffs-diff.js ] || { echo "FAIL: bin/ffs-diff.js missing"; exit 1; }
+
+set +e
+out="$("$BUN" test tests/ 2>&1)"
+rc=$?
+set -e
+echo "$out"
+
+[ "$rc" -eq 0 ] || { echo "FAIL: bun test rc=$rc"; exit 1; }
+echo "$out" | grep -qiE '[0-9]+ pass|[0-9]+ tests pass' || { echo "FAIL: no pass marker"; exit 1; }
+
+echo "== ffs-diff check: PASS =="
+exit 0
